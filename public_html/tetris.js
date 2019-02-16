@@ -119,9 +119,10 @@ class Tetris {
                         self.currentFigurePosition.y = newY;
                         self._render();
                     } else {
-                       self._addFigureToField(self.currentFigure, self.currentFigurePosition.x, self.currentFigurePosition.y) 
+                       self._addFigureToField(self.currentFigure, self.currentFigurePosition.x, self.currentFigurePosition.y, self.currentFigureColor); 
                        self._clearLines();
                        self.currentFigure = [];
+                       self.currentFigureColor = '';
                        self._render(); 
                        self._startNewFigure();
                        done = false;
@@ -203,13 +204,13 @@ class Tetris {
         }
     }
     
-    _addFigureToField(figure, x, y) {
+    _addFigureToField(figure, x, y, color) {
         for (var row = 0; row < figure.length; row++) {
             for (var col = 0; col < figure[row].length; col++) {
                 var figureValue = figure[row][col];
                 if (figureValue === 1) {
                     if (this.field[y + row] !== undefined && this.field[y + row][x + col] !== undefined) {
-                        this.field[y + row][x + col] = 1;
+                        this.field[y + row][x + col] = color;
                     }
                 }
             }
@@ -305,7 +306,7 @@ class Tetris {
                 if (figureValue === 1) {
                     if (this.field[y + row] !== undefined && this.field[y + row][x + col] !== undefined) {
                         var fieldValue = this.field[y + row][x + col];
-                        if (fieldValue === 1) {
+                        if (fieldValue !== 0) {
                             return false;
                         }
                     } else {
@@ -397,8 +398,8 @@ class TetrisHtml {
     drawField(field) {
         for (var row = 0; row < field.length; row++) {
             for (var col = 0; col < field[row].length; col++) {
-                if (field[row][col] === 1) {
-                    this._drawBlock(col, row, this.ctx);
+                if (field[row][col] !== 0) {
+                    this._drawBlock(col, row, this.ctx, field[row][col]);
                 } else {
                     this._drawEmptyBlock(col, row);
                 }    
