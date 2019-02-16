@@ -11,6 +11,8 @@ class Tetris {
     constructor(id) {
         this.isPlay = false; 
         this.baseDelay = 1000;
+        this.keydownDelay = 50;
+        
         this.columns = 10;
         this.rows = 20;
         this.tetrisHtml = new TetrisHtml(id, this.columns, this.rows);
@@ -86,7 +88,8 @@ class Tetris {
                     prevTime = time;
                 }
                 var timePassed = time - prevTime;
-                if (timePassed > self.delay) {
+                var delay = (self.keyDown ? self.keydownDelay : self.delay);
+                if (timePassed > delay) {
                     var newX = self.currentFigurePosition.x;
                     var newY = self.currentFigurePosition.y + 1;
                     if (self._validateFigure(self.currentFigure, newX, newY)) {
@@ -155,14 +158,20 @@ class Tetris {
             }
             this.field.unshift(newArr);
             this.score += 10;
-            //this._checkSpeed();
+            this._addSpeed();
             this.tetrisHtml.renderScore(this.score);
         }
         this._render();
     }
     
-    _checkSpeed() {
-        this.delay = this.baseDelay / (Math.pow(1.5, (1 + this.scope/20)));
+    _addSpeed() {
+        if (this.delay > 300) {
+            this.delay -= 100;
+        } else if (this.delay <= 300 && this.delay > 150 ) {
+            this.delay -= 20;
+        } else if (this.delay <= 150 && this.delay > 50 ) {
+            this.delay -= 10;
+        }
     }
     
     _addFigureToField(figure, x, y) {
@@ -202,8 +211,6 @@ class Tetris {
             } else if (code === 40) {
                 // вниз
                 if (!self.keyDown) {
-                    self.mainDelay = self.delay;
-                    self.delay = 50;
                     self.keyDown = true;
                 }
             }
@@ -212,7 +219,6 @@ class Tetris {
             var code = event.which;
             if (code === 40) {
                 // вниз
-                self.delay = self.mainDelay;
                 self.keyDown = false;
             }
         });
@@ -287,9 +293,9 @@ class Tetris {
 class TetrisHtml {
     
     constructor(id, columns, rows) {
-        this.fieldColor = 'white';
-        this.lineColor = 'black';
-        this.figureColor = 'blue';
+        this.fieldColor = 'lightgray';
+        this.lineColor = 'white';
+        this.figureColor = 'dimgray';
         
         this.width = 200;
         this.height = 400;
@@ -306,7 +312,7 @@ class TetrisHtml {
     }
     
     clearCanvas() {
-        this.ctx.fillStyle = 'lightgray';
+        this.ctx.fillStyle = this.fieldColor;
         this.ctx.fillRect(0, 0, this.width, this.height);
     }
     
@@ -347,14 +353,14 @@ class TetrisHtml {
     }
     
     drawBlock(col, row) {
-        this.ctx.fillStyle = 'black';
+        this.ctx.fillStyle = this.figureColor;
         this.ctx.fillRect(col * this.blockWidth, row * this.blockHeight, this.blockWidth, this.blockHeight);
-        this.ctx.strokeStyle = 'white';
+        this.ctx.strokeStyle = this.lineColor;
         this.ctx.strokeRect(col * this.blockWidth, row * this.blockHeight, this.blockWidth, this.blockHeight);
     }
     
     drawEmptyBlock(col, row) {
-       this.ctx.strokeStyle = 'white';
+       this.ctx.strokeStyle = this.lineColor;
        this.ctx.lineWidth = 0.5;
        this.ctx.strokeRect(col * this.blockWidth, row * this.blockHeight, this.blockWidth, this.blockHeight); 
     }
