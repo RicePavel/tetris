@@ -10,15 +10,18 @@ class Tetris {
     
     constructor(id) {
         this.isPlay = false; 
-        this.delay = 200;
-        this.columns = 15;
+        this.baseDelay = 1000;
+        this.columns = 10;
         this.rows = 20;
         this.tetrisHtml = new TetrisHtml(id, this.columns, this.rows);
+        this.score = 0;
+        this.record = 0;
+        this.keyDown = false;
+        this.mainDelay;
         
         this.currentFigure = [];
         this.currentFigurePosition = {x: 0, y: 0};
         this.field = [];
-        this._setEmptyField();
         
         this.figures = [
             [
@@ -49,51 +52,68 @@ class Tetris {
                 [1, 1, 0]
             ]
         ];
+        this._setKeyEvents();
     }
     
     start() {
         if (!this.isPlay) {
             this.isPlay = true;
-            
+            this.delay = this.baseDelay;
+            this.score = 0;
+            this.tetrisHtml.renderInfo(this.score, this.record);
+            this._setEmptyField();
             this._startNewFigure();
-            this._setKeyEvents();
         }
     }
     
     _startNewFigure() {
-        this.currentFigure = this._getRandomFigure();
-        this.currentFigurePosition = {x: 0, y: 0};
-            
-        this._render();
+        var figure = this._getRandomFigure();
+        var x = 0;
+        var y = 0;
         
-        var prevTime = null;
-        var self = this;
+        if (this._validateFigure(figure, x, y)) {
+            this.currentFigure = this._getRandomFigure();
+            this.currentFigurePosition = {x: 0, y: 0};
 
-        var requestId = requestAnimationFrame(function animate(time) {
-            var done = true;
-            if (!prevTime) {
-                prevTime = time;
-            }
-            var timePassed = time - prevTime;
-            if (timePassed > self.delay) {
-                var newX = self.currentFigurePosition.x;
-                var newY = self.currentFigurePosition.y + 1;
-                if (self._validateFigure(self.currentFigure, newX, newY)) {
-                    self.currentFigurePosition.y = newY;
-                    self._render();
-                } else {
-                   self._addFigureToField(self.currentFigure, self.currentFigurePosition.x, self.currentFigurePosition.y) 
-                   self.currentFigure = [];
-                   self._render(); 
-                   self._startNewFigure();
-                   done = false;
+            this._render();
+
+            var prevTime = null;
+            var self = this;
+
+            var requestId = requestAnimationFrame(function animate(time) {
+                var done = true;
+                if (!prevTime) {
+                    prevTime = time;
                 }
-                prevTime = time;
+                var timePassed = time - prevTime;
+                if (timePassed > self.delay) {
+                    var newX = self.currentFigurePosition.x;
+                    var newY = self.currentFigurePosition.y + 1;
+                    if (self._validateFigure(self.currentFigure, newX, newY)) {
+                        self.currentFigurePosition.y = newY;
+                        self._render();
+                    } else {
+                       self._addFigureToField(self.currentFigure, self.currentFigurePosition.x, self.currentFigurePosition.y) 
+                       self._clearLines();
+                       self.currentFigure = [];
+                       self._render(); 
+                       self._startNewFigure();
+                       done = false;
+                    }
+                    prevTime = time;
+                }
+                if (done) {
+                    requestAnimationFrame(animate);
+                }
+            });
+        } else {
+            this.isPlay = false;
+            this.tetrisHtml.gameOver();
+            if (this.score > this.record) {
+                this.record = this.score;
             }
-            if (done) {
-                requestAnimationFrame(animate);
-            }
-        });   
+            this.tetrisHtml.renderInfo(this.score, this.record);
+        }
     }
     
     _getRandomFigure() {
@@ -113,6 +133,38 @@ class Tetris {
         this.tetrisHtml.drawField(this.field);
     }
     
+    _clearLines() {
+        var deleteRowsNumbers = [];
+        for (var row = 0; row < this.field.length; row++) {
+            var rowFill = true;
+            for (var col = 0; col < this.field[row].length; col++) {
+                if (this.field[row][col] === 0) {
+                    rowFill = false;
+                    break;
+                }
+            }
+            if (rowFill) {
+                deleteRowsNumbers.push(row);
+            }
+        }
+        for (var i = 0; i < deleteRowsNumbers.length; i++) {
+            this.field.splice(deleteRowsNumbers[i], 1);
+            var newArr = [];
+            for (var n = 0; n < this.columns; n++) {
+                newArr.push(0);
+            }
+            this.field.unshift(newArr);
+            this.score += 10;
+            //this._checkSpeed();
+            this.tetrisHtml.renderScore(this.score);
+        }
+        this._render();
+    }
+    
+    _checkSpeed() {
+        this.delay = this.baseDelay / (Math.pow(1.5, (1 + this.scope/20)));
+    }
+    
     _addFigureToField(figure, x, y) {
         for (var row = 0; row < figure.length; row++) {
             for (var col = 0; col < figure[row].length; col++) {
@@ -130,24 +182,78 @@ class Tetris {
         var self = this;
         $(document).keydown(function(event) {
             var code = event.which;
-            if (code == 37) {
+            if (code === 37) {
+                // влево
                 var newX = self.currentFigurePosition.x - 1;
                 if (self._validateFigure(self.currentFigure, newX, self.currentFigurePosition.y)) {
                     self.currentFigurePosition.x = newX;
                     self._render();
                 }
             } else if (code === 39) {
+                // вправо
                 var newX = self.currentFigurePosition.x + 1;
                 if (self._validateFigure(self.currentFigure, newX, self.currentFigurePosition.y)) {
                     self.currentFigurePosition.x = newX;
                     self._render();
                 }
+            } else if (code === 38) {
+                // вверх
+                self._turnCurrentFigure();
+            } else if (code === 40) {
+                // вниз
+                if (!self.keyDown) {
+                    self.mainDelay = self.delay;
+                    self.delay = 50;
+                    self.keyDown = true;
+                }
             }
-            
+        });
+        $(document).keyup(function (event) {
+            var code = event.which;
+            if (code === 40) {
+                // вниз
+                self.delay = self.mainDelay;
+                self.keyDown = false;
+            }
         });
     }
     
+    _turnCurrentFigure() {
+        var newFigureInfo = this._getTurnFigure(this.currentFigure, this.currentFigurePosition.x, this.currentFigurePosition.y);
+        if (this._validateFigure(newFigureInfo.figure, newFigureInfo.x, newFigureInfo.y)) {
+            this.currentFigure = newFigureInfo.figure;
+            this.currentFigurePosition.x = newFigureInfo.x;
+            this.currentFigurePosition.y = newFigureInfo.y;
+            this._render();
+        }
+    }
+    
+    _getTurnFigure(figure, x, y) {
+        var newFigure = [];
+        var maxCols = 0;
+        for (var r = 0; r < figure.length; r++) {
+            if (figure[r].length > maxCols) {
+                maxCols = figure[r].length;
+            }
+        }
+        for (var c = 0; c < maxCols; c++) {
+            var newRow = [];
+            for (var r = figure.length - 1; r >= 0; r--) {
+                newRow.push(figure[r][c] !== undefined ? figure[r][c] : 0);
+            }
+            newFigure.push(newRow);
+        }
+        var newX = x;
+        var newY = y;
+        return {
+            figure: newFigure,
+            x: newX,
+            y: newY
+        };
+    }
+    
     _setEmptyField() {
+        this.field = [];
         for (var y = 0; y < this.rows; y++) {
             var arr = [];
             for (var x = 0; x < this.columns; x++) {
@@ -176,15 +282,17 @@ class Tetris {
         return true;
     }
     
-    
-    
 }
 
 class TetrisHtml {
     
     constructor(id, columns, rows) {
-        this.width = 250;
-        this.height = 350;
+        this.fieldColor = 'white';
+        this.lineColor = 'black';
+        this.figureColor = 'blue';
+        
+        this.width = 200;
+        this.height = 400;
         this.columns = columns;
         this.rows = rows;
         this.blockWidth = this.width / this.columns;
@@ -211,6 +319,19 @@ class TetrisHtml {
                 }
             }
         }
+    }
+    
+    renderScore(score) {
+        $('#score').text(score);
+    }
+    
+    renderInfo(score, record) {
+        $('#score').text(score);
+        $('#record').text(record);
+    }
+    
+    gameOver() {
+        $('#gameStatus').text('Game over');
     }
     
     drawField(field) {
