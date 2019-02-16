@@ -6,8 +6,6 @@
 
 class Tetris {
     
-    
-    
     constructor(id) {
         this.isPlay = false; 
         this.baseDelay = 1000;
@@ -21,9 +19,13 @@ class Tetris {
         this.keyDown = false;
         this.mainDelay;
         
+        this.currentFigureColor = '';
         this.currentFigure = [];
         this.currentFigurePosition = {x: 0, y: 0};
         this.field = [];
+        
+        this.nextFigureColor;
+        this.nextFigure;
         
         this.figures = [
             [
@@ -54,6 +56,15 @@ class Tetris {
                 [1, 1, 0]
             ]
         ];
+        this.figuresColors = [
+            'aqua',
+            'blueviolet',
+            'blue',
+            'darkorange',
+            'yellow',
+            'red',
+            'green'
+        ];
         this._setKeyEvents();
     }
     
@@ -62,6 +73,7 @@ class Tetris {
             this.isPlay = true;
             this.delay = this.baseDelay;
             this.score = 0;
+            this.nextFigure = undefined;
             this.tetrisHtml.renderInfo(this.score, this.record);
             this._setEmptyField();
             this._startNewFigure();
@@ -69,19 +81,30 @@ class Tetris {
     }
     
     _startNewFigure() {
-        var figure = this._getRandomFigure();
+        
+        var figure, figureColor;
+        if (this.nextFigure) {
+            figure = this.nextFigure;
+            figureColor = this.nextFigureColor;
+        } else {
+            var figureData = this._getRandomFigureData();
+            figure = figureData.figure;
+            figureColor = figureData.color;
+        }
+
         var x = 0;
         var y = 0;
         
         if (this._validateFigure(figure, x, y)) {
-            this.currentFigure = this._getRandomFigure();
-            this.currentFigurePosition = {x: 0, y: 0};
-
+            this.currentFigure = figure;
+            this.currentFigureColor = figureColor;
+            this.currentFigurePosition = {x: x, y: y};
+            var figureData = this._getRandomFigureData();
+            this.nextFigure = figureData.figure;
+            this.nextFigureColor = figureData.color;
             this._render();
-
             var prevTime = null;
             var self = this;
-
             var requestId = requestAnimationFrame(function animate(time) {
                 var done = true;
                 if (!prevTime) {
@@ -111,10 +134,10 @@ class Tetris {
             });
         } else {
             this.isPlay = false;
-            this.tetrisHtml.gameOver();
             if (this.score > this.record) {
                 this.record = this.score;
             }
+            this.tetrisHtml.gameOver();
             this.tetrisHtml.renderInfo(this.score, this.record);
         }
     }
@@ -122,6 +145,11 @@ class Tetris {
     _getRandomFigure() {
         var idx = this._randomInteger(1, this.figures.length);
         return this.figures[idx - 1];
+    }
+    
+    _getRandomFigureData() {
+        var idx = this._randomInteger(1, this.figures.length);
+        return {figure: this.figures[idx - 1], color: this.figuresColors[idx - 1]};
     }
     
     _randomInteger(min, max) {
@@ -132,7 +160,8 @@ class Tetris {
     
     _render() {
         this.tetrisHtml.clearCanvas();
-        this.tetrisHtml.drawFigure(this.currentFigure, this.currentFigurePosition.x, this.currentFigurePosition.y);
+        this.tetrisHtml.drawFigureOnMainField(this.currentFigure, this.currentFigurePosition.x, this.currentFigurePosition.y, this.currentFigureColor);
+        this.tetrisHtml.drawNextFigure(this.nextFigure, this.nextFigureColor);
         this.tetrisHtml.drawField(this.field);
     }
     
@@ -309,6 +338,12 @@ class TetrisHtml {
         this.canvas.height = this.height;
         this.ctx = this.canvas.getContext('2d');
         this.clearCanvas();
+        this.nextFigureCanvas = document.getElementById('canvas_statistic');
+        this.nextFigureCanvas.width = this.blockWidth * 6;
+        this.nextFigureCanvas.height = this.blockHeight * 6;
+        this.nextFigureCtx = this.nextFigureCanvas.getContext('2d');
+        this.nextFigureCtx.fillStyle = this.fieldColor;
+        this.nextFigureCtx.fillRect(0, 0, this.nextFigureCanvas.width, this.nextFigureCanvas.height);
     }
     
     clearCanvas() {
@@ -316,12 +351,31 @@ class TetrisHtml {
         this.ctx.fillRect(0, 0, this.width, this.height);
     }
     
-    drawFigure(arr, startCol, startRow) {
+    drawNextFigure(arr, color) {
+        this._clearNextCanvas();
+        if (arr) {
+            this._drawFigure(arr, 1, 1, this.nextFigureCtx, color);
+        }
+    }
+    
+    drawFigureOnMainField(arr, startCol, startRow, color) {
+        this._drawFigure(arr, startCol, startRow, this.ctx, color);
+    }
+    
+    _clearNextCanvas() {
+        this.nextFigureCtx.fillStyle = this.fieldColor;
+        this.nextFigureCtx.fillRect(0, 0, this.nextFigureCanvas.width, this.nextFigureCanvas.height);
+    }
+    
+    _drawFigure(arr, startCol, startRow, ctx, color) {
+        if (color === undefined) {
+            color = this.figureColor;
+        }
         for (var row = 0; row < arr.length; row++) {
             for (var col = 0; col < arr[row].length; col++) {
                 var value = arr[row][col];
                 if (value === 1) {
-                    this.drawBlock(startCol + col, startRow + row);
+                    this._drawBlock(startCol + col, startRow + row, ctx, color);
                 }
             }
         }
@@ -344,22 +398,25 @@ class TetrisHtml {
         for (var row = 0; row < field.length; row++) {
             for (var col = 0; col < field[row].length; col++) {
                 if (field[row][col] === 1) {
-                    this.drawBlock(col, row);
+                    this._drawBlock(col, row, this.ctx);
                 } else {
-                    this.drawEmptyBlock(col, row);
+                    this._drawEmptyBlock(col, row);
                 }    
             }
         }
     }
     
-    drawBlock(col, row) {
-        this.ctx.fillStyle = this.figureColor;
-        this.ctx.fillRect(col * this.blockWidth, row * this.blockHeight, this.blockWidth, this.blockHeight);
-        this.ctx.strokeStyle = this.lineColor;
-        this.ctx.strokeRect(col * this.blockWidth, row * this.blockHeight, this.blockWidth, this.blockHeight);
+    _drawBlock(col, row, ctx, color) {
+        if (color === undefined) {
+            color = this.figureColor;
+        }
+        ctx.fillStyle = color;
+        ctx.fillRect(col * this.blockWidth, row * this.blockHeight, this.blockWidth, this.blockHeight);
+        ctx.strokeStyle = this.lineColor;
+        ctx.strokeRect(col * this.blockWidth, row * this.blockHeight, this.blockWidth, this.blockHeight);
     }
     
-    drawEmptyBlock(col, row) {
+    _drawEmptyBlock(col, row) {
        this.ctx.strokeStyle = this.lineColor;
        this.ctx.lineWidth = 0.5;
        this.ctx.strokeRect(col * this.blockWidth, row * this.blockHeight, this.blockWidth, this.blockHeight); 

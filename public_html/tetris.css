@@ -8,4 +8,24 @@ and open the template in the editor.
     Author     : administrator
 */
 
+.tetrisContainer .mainCanvas {
+    float: left;
+}
+
+.tetrisContainer .nextCanvas {
+    margin: 30px;
+}
+
+.tetrisContainer .infoContainer {
+    /*float: left;*/
+    margin: 30px 30px 30px 230px;
+}
+
+.tetrisContainer .startInput {
+    /*float: left;*/
+    margin: 30px;
+    width: 150px;
+    height: 50px;
+}
+
 

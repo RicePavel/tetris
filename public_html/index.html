@@ -15,13 +15,17 @@ and open the template in the editor.
         <script src="script.js" ></script>
     </head>
     <body>
-        <div>TODO write content</div>
         
-        <canvas id="canvas_1"></canvas>
-        <div>Счет: <span id="score"></span></div>
-        <div>Рекорд: <span id="record">0</span></div>
-        <div><span id="gameStatus"></span></div>
-        <input type="submit" id="startTetris" value="Начать" />
+        <div class="tetrisContainer" id="tetrisContainer">
+            <canvas id="canvas_1" class="mainCanvas"></canvas>
+            <canvas id="canvas_statistic" class="nextCanvas"></canvas>
+            <div class="infoContainer">
+                <div>Счет: <span id="score"></span></div>
+                <div>Рекорд: <span id="record">0</span></div>
+                <div><span id="gameStatus"></span></div>
+            </div>
+            <input type="submit" id="startTetris" class="startInput" value="Начать" />
+        </div>
         
     </body>
 </html>
