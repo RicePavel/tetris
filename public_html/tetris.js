@@ -197,9 +197,9 @@ class Tetris {
     _addSpeed() {
         if (this.delay > 300) {
             this.delay -= 100;
-        } else if (this.delay <= 300 && this.delay > 150 ) {
+        } else if (this.delay <= 300 && this.delay > 200 ) {
             this.delay -= 20;
-        } else if (this.delay <= 150 && this.delay > 50 ) {
+        } else if (this.delay <= 200 && this.delay > 50 ) {
             this.delay -= 10;
         }
     }
@@ -279,7 +279,12 @@ class Tetris {
             }
             newFigure.push(newRow);
         }
-        var newX = x;
+        var newX;
+        if (maxCols > 3) {
+            newX = x+1;
+        } else {
+            newX = x;
+        }
         var newY = y;
         return {
             figure: newFigure,
