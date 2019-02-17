@@ -17,12 +17,12 @@ and open the template in the editor.
 }
 
 .tetrisContainer .infoContainer {
-    /*float: left;*/
     margin: 30px 30px 30px 230px;
 }
 
 .tetrisContainer .gameStatus {
     color: red;
+    font-weight: bold;
 }
 
 .tetrisContainer .startInput {
@@ -30,6 +30,14 @@ and open the template in the editor.
     margin: 30px;
     width: 150px;
     height: 50px;
+    font-size: 15pt;
+    font-weight: bold;
+    color: red;
+}
+
+.tetrisContainer .text {
+    margin: 5px;
+    font-size: 12pt;
 }
 
 

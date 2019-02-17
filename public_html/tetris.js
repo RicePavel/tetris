@@ -8,13 +8,14 @@ class Tetris {
     
     constructor(id, options) {
         
-        this.isPlay = false; 
-        this.baseDelay = 1000;
-        this.keydownDelay = 50;
+        options = options || {};
+        this.baseDelay = options.baseDelay || 1000;
+        this.keydownDelay = options.keydownDelay || 50;
+        this.columns = options.columns || 10;
+        this.rows = options.rows || 20;
         
-        this.columns = 10;
-        this.rows = 20;
-        this.tetrisHtml = new TetrisHtml(id, this.columns, this.rows, this);
+        this.isPlay = false; 
+        this.tetrisHtml = new TetrisHtml(id, this.columns, this.rows, this, options.width, options.height);
         this.score = 0;
         this.record = 0;
         this.keyDown = false;
@@ -330,15 +331,17 @@ class Tetris {
 
 class TetrisHtml {
     
-    constructor(id, columns, rows, tetrisObject) {
+    constructor(id, columns, rows, tetrisObject, width, height) {
+        
+        this.width = width || 200;
+        this.height = height || 400;
+        
         this.fieldColor = 'lightgray';
         this.lineColor = 'white';
         this.figureColor = 'dimgray';
         
         this.tetrisObject = tetrisObject;
         
-        this.width = 200;
-        this.height = 400;
         this.columns = columns;
         this.rows = rows;
         this.blockWidth = this.width / this.columns;
@@ -349,11 +352,11 @@ class TetrisHtml {
             '<canvas class="mainCanvas"></canvas>' +
             '<canvas class="nextCanvas"></canvas>' +
             '<div class="infoContainer">' +
-                '<div>Счет: <span class="score"></span></div>' +
-                '<div>Рекорд: <span class="record">0</span></div>' +
-                '<div><span class="gameStatus"></span></div>' +
+                '<div class="text">Счет: <span class="score"></span></div>' +
+                '<div class="text">Рекорд: <span class="record">0</span></div>' +
+                '<div class="text"><span class="gameStatus"></span></div>' +
             '</div>' +
-            '<input type="submit" class="startInput" value="Начать" />'
+            '<input type="submit" class="startInput" value="START" />'
             );
         
         this.canvas = this.container.find('.mainCanvas')[0];
