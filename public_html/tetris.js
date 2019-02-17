@@ -6,14 +6,15 @@
 
 class Tetris {
     
-    constructor(id) {
+    constructor(id, options) {
+        
         this.isPlay = false; 
         this.baseDelay = 1000;
         this.keydownDelay = 50;
         
         this.columns = 10;
         this.rows = 20;
-        this.tetrisHtml = new TetrisHtml(id, this.columns, this.rows);
+        this.tetrisHtml = new TetrisHtml(id, this.columns, this.rows, this);
         this.score = 0;
         this.record = 0;
         this.keyDown = false;
@@ -71,6 +72,7 @@ class Tetris {
     start() {
         if (!this.isPlay) {
             this.isPlay = true;
+            this.tetrisHtml.hideStartButton();
             this.delay = this.baseDelay;
             this.score = 0;
             this.nextFigure = undefined;
@@ -92,7 +94,7 @@ class Tetris {
             figureColor = figureData.color;
         }
 
-        var x = 0;
+        var x = Math.round(this.columns / 2) - 2;
         var y = 0;
         
         if (this._validateFigure(figure, x, y)) {
@@ -139,6 +141,7 @@ class Tetris {
                 this.record = this.score;
             }
             this.tetrisHtml.gameOver();
+            this.tetrisHtml.showStartButton();
             this.tetrisHtml.renderInfo(this.score, this.record);
         }
     }
@@ -327,10 +330,12 @@ class Tetris {
 
 class TetrisHtml {
     
-    constructor(id, columns, rows) {
+    constructor(id, columns, rows, tetrisObject) {
         this.fieldColor = 'lightgray';
         this.lineColor = 'white';
         this.figureColor = 'dimgray';
+        
+        this.tetrisObject = tetrisObject;
         
         this.width = 200;
         this.height = 400;
@@ -339,17 +344,35 @@ class TetrisHtml {
         this.blockWidth = this.width / this.columns;
         this.blockHeight = this.height / this.rows;
         
-        this.canvas = document.getElementById(id);
+        this.container = $('#' + id);
+        this.container.append(
+            '<canvas class="mainCanvas"></canvas>' +
+            '<canvas class="nextCanvas"></canvas>' +
+            '<div class="infoContainer">' +
+                '<div>Счет: <span class="score"></span></div>' +
+                '<div>Рекорд: <span class="record">0</span></div>' +
+                '<div><span class="gameStatus"></span></div>' +
+            '</div>' +
+            '<input type="submit" class="startInput" value="Начать" />'
+            );
+        
+        this.canvas = this.container.find('.mainCanvas')[0];
         this.canvas.width = this.width;
         this.canvas.height = this.height;
         this.ctx = this.canvas.getContext('2d');
         this.clearCanvas();
-        this.nextFigureCanvas = document.getElementById('canvas_statistic');
+        this.nextFigureCanvas = this.container.find('.nextCanvas')[0];
         this.nextFigureCanvas.width = this.blockWidth * 6;
         this.nextFigureCanvas.height = this.blockHeight * 6;
         this.nextFigureCtx = this.nextFigureCanvas.getContext('2d');
         this.nextFigureCtx.fillStyle = this.fieldColor;
         this.nextFigureCtx.fillRect(0, 0, this.nextFigureCanvas.width, this.nextFigureCanvas.height);
+        
+        var self = this;
+        
+        this.container.find('.startInput').click(function() {
+            self.tetrisObject.start();
+        });
     }
     
     clearCanvas() {
@@ -388,16 +411,16 @@ class TetrisHtml {
     }
     
     renderScore(score) {
-        $('#score').text(score);
+        this.container.find('.score').text(score);
     }
     
     renderInfo(score, record) {
-        $('#score').text(score);
-        $('#record').text(record);
+        this.container.find('.score').text(score);
+        this.container.find('.record').text(record);
     }
     
     gameOver() {
-        $('#gameStatus').text('Game over');
+        this.container.find('.gameStatus').text('Game over');
     }
     
     drawField(field) {
@@ -410,6 +433,14 @@ class TetrisHtml {
                 }    
             }
         }
+    }
+    
+    hideStartButton() {
+        this.container.find('.startInput').hide();
+    }
+    
+    showStartButton() {
+        this.container.find('.startInput').show();
     }
     
     _drawBlock(col, row, ctx, color) {
@@ -427,6 +458,8 @@ class TetrisHtml {
        this.ctx.lineWidth = 0.5;
        this.ctx.strokeRect(col * this.blockWidth, row * this.blockHeight, this.blockWidth, this.blockHeight); 
     }
+    
+    
     
 }
 

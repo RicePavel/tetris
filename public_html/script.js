@@ -6,9 +6,13 @@
 
 $(document).ready(function() {
     
+    var tetris = new Tetris('tetrisContainer');
+    
+    /*
     var tetris = new Tetris('canvas_1');
     $('#startTetris').click(function() {
         tetris.start();
     });
+    */
     
 });

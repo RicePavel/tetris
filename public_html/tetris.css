@@ -21,6 +21,10 @@ and open the template in the editor.
     margin: 30px 30px 30px 230px;
 }
 
+.tetrisContainer .gameStatus {
+    color: red;
+}
+
 .tetrisContainer .startInput {
     /*float: left;*/
     margin: 30px;
